@@ -253,3 +253,14 @@ aside {
     }
   }
 }
+// 确认框样式
+.el-message-box__btns {
+  flex-direction: row-reverse;
+  justify-content: center;
+  button:nth-child(1) {
+    margin-left: 10px;
+  }
+  button:nth-child(2) {
+    margin-left: 0px;
+  }
+}
