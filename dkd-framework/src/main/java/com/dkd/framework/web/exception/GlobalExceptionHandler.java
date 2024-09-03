@@ -147,6 +147,12 @@ public class GlobalExceptionHandler
         if(e.getMessage().contains("foreign")) {
             return AjaxResult.warn("无法删除，有其他数据引用");
         }
+        if(e.getMessage().contains("tb_policy_policy_name_uindex")) {
+            return AjaxResult.warn("无法添加或修改，策略名称已存在");
+        }
+        if(e.getMessage().contains("tb_sku_class_class_name_uindex")) {
+            return AjaxResult.warn("无法添加或修改，商品类型已存在");
+        }
         return AjaxResult.error("数据完整性异常，请联系管理员");
     }
 }

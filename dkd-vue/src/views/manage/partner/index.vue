@@ -2,11 +2,13 @@
   <div class="app-container">
     <el-form @submit.native.prevent :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="90px">
       <el-form-item label="合作商名称" prop="partnerName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.partnerName"
           placeholder="请输入合作商名称"
           clearable
           @keyup.enter="handleQuery"
+          :fetch-suggestions="querySearch"
+          value-key="partnerName"
         />
       </el-form-item>
       <el-form-item>
@@ -87,16 +89,17 @@
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
+      :page-sizes="[10, 20, 50]"
     />
 
     <!-- 添加或修改合作商管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="partnerRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="合作商名称" prop="partnerName">
-          <el-input v-model="form.partnerName" placeholder="请输入合作商名称" />
+          <el-input maxlength="10" v-model="form.partnerName" placeholder="请输入合作商名称" />
         </el-form-item>
         <el-form-item label="联系人" prop="contactPerson">
-          <el-input v-model="form.contactPerson" placeholder="请输入联系人" />
+          <el-input maxlength="10" v-model="form.contactPerson" placeholder="请输入联系人" />
         </el-form-item>
         <el-form-item label="联系电话" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
@@ -193,6 +196,10 @@ function getList() {
     partnerList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+    if (total.value === 0) {
+      // 提示无相关搜索结果
+      proxy.$modal.msg("无相关搜索结果");
+    }
   });
 }
 
@@ -246,7 +253,7 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = "添加合作商管理";
+  title.value = "添加合作商";
 }
 
 /** 查看详情按钮操作 */
@@ -265,7 +272,7 @@ function handleUpdate(row) {
   getPartner(_id).then(response => {
     form.value = response.data;
     open.value = true;
-    title.value = "修改合作商管理";
+    title.value = "修改合作商";
   });
 }
 
@@ -309,9 +316,23 @@ function handleReset(row) {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.delete('你确定要删除本条内容吗？').then(function() {
-    return delPartner(_ids);
-  }).then(() => {
+  proxy.$modal.delete('你确定要删除本条内容吗？').then(async () => {
+    let flag = false;
+    if(row.id) flag = row.nodeCount > 0
+    else {
+      for (let i = 0; i < _ids.length; i++) {
+        if (flag) break
+        for (let j = 0; j < partnerList.value.length; j++) {
+          if (_ids[i] === partnerList.value[j].id && partnerList.value[j].nodeCount > 0) {
+            flag = true;
+            break
+          }
+        }
+      }
+    } 
+    
+    if(flag) return proxy.$modal.msg("请先调整点位后再删除");
+    await delPartner(_ids);
     getList();
     proxy.$modal.msgSuccess("删除成功");
   }).catch(() => {});
@@ -322,6 +343,14 @@ function handleExport() {
   proxy.download('manage/partner/export', {
     ...queryParams.value
   }, `partner_${new Date().getTime()}.xlsx`)
+}
+
+/** 输入框显示联想词 */
+function querySearch(queryString, cb) {
+  const results = queryString !== 'null'
+    ? partnerList.value.filter(item => item.partnerName.indexOf(queryString) === 0)
+    : partnerList.value
+  cb(results)
 }
 
 getList();

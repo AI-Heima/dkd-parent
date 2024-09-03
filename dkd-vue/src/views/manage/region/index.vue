@@ -2,11 +2,13 @@
   <div class="app-container">
     <el-form @submit.native.prevent :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="区域名称" prop="regionName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.regionName"
           placeholder="请输入区域名称"
           clearable
           @keyup.enter="handleQuery"
+          :fetch-suggestions="querySearch"
+          value-key="regionName"
         />
       </el-form-item>
       <el-form-item>
@@ -79,16 +81,17 @@
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
+      :page-sizes="[10, 20, 50]"
     />
 
     <!-- 添加或修改区域管理对话框 -->
     <el-dialog @submit.native.prevent :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="regionRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="区域名称" prop="regionName">
-          <el-input v-model="form.regionName" placeholder="请输入区域名称" />
+          <el-input maxlength="15" v-model="form.regionName" placeholder="请输入区域名称" />
         </el-form-item>
         <el-form-item label="备注说明" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+          <el-input maxlength="40" v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -101,10 +104,10 @@
 
     <!-- 查看区域详情对话框 -->
     <el-dialog title="区域详情" v-model="readOpen" width="500px" append-to-body>
-      <el-form-item label="区域名称" prop="regionName">
+      <el-form-item label="区域名称">
         <el-input v-model="form.regionName" readonly />
       </el-form-item>
-      <lebal>包含点位：</lebal>
+      <label>包含点位：</label>
       <el-table :data="nodeList" style="margin-top: 10px;">
         <el-table-column label="序号" type="index" width="50" align="center" />
         <el-table-column label="点位名称" align="center" prop="nodeName" />
@@ -122,8 +125,6 @@ import { loadAllParams } from "@/api/page";
 const { proxy } = getCurrentInstance();
 
 const regionList = ref([]);
-const nodeList = ref([]);
-const readOpen = ref(false);
 const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
@@ -159,6 +160,10 @@ function getList() {
     regionList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+    if (total.value === 0) {
+      // 提示无相关搜索结果
+      proxy.$modal.msg("无相关搜索结果");
+    }
   });
 }
 
@@ -207,19 +212,17 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = "添加区域管理";
+  title.value = "添加区域";
 }
 
 /** 查看详情按钮操作 */
+const nodeList = ref([]);
+const readOpen = ref(false);
 function handleRead(row) {
-  // 查询区域信息
   reset();
-  getRegion(row.id).then(response => {
-    form.value = response.data;
-  });
+  form.value = {...row};
   // 查看点位列表
-  loadAllParams.regionId = row.id
-  listNode(loadAllParams).then(response => {
+  listNode({ ...loadAllParams, regionId: row.id }).then(response => {
     nodeList.value = response.rows;
     readOpen.value = true;
   });
@@ -232,7 +235,7 @@ function handleUpdate(row) {
   getRegion(_id).then(response => {
     form.value = response.data;
     open.value = true;
-    title.value = "修改区域管理";
+    title.value = "修改区域";
   });
 }
 
@@ -260,9 +263,23 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.delete('你确定要删除本条内容吗？').then(function() {
-    return delRegion(_ids);
-  }).then(() => {
+  proxy.$modal.delete('你确定要删除本条内容吗？').then(async () => {
+    let flag = false;
+    if(row.id) flag = row.nodeCount > 0
+    else {
+      for (let i = 0; i < _ids.length; i++) {
+        if (flag) break
+        for (let j = 0; j < regionList.value.length; j++) {
+          if (_ids[i] === regionList.value[j].id && regionList.value[j].nodeCount > 0) {
+            flag = true;
+            break
+          }
+        }
+      }
+    } 
+    
+    if(flag) return proxy.$modal.msg("请先调整点位后再删除");
+    await delRegion(_ids);
     getList();
     proxy.$modal.msgSuccess("删除成功");
   }).catch(() => {});
@@ -273,6 +290,14 @@ function handleExport() {
   proxy.download('manage/region/export', {
     ...queryParams.value
   }, `region_${new Date().getTime()}.xlsx`)
+}
+
+/** 输入框显示联想词 */
+function querySearch(queryString, cb) {
+  const results = queryString !== 'null'
+    ? regionList.value.filter(item => item.regionName.indexOf(queryString) === 0)
+    : regionList.value
+  cb(results)
 }
 
 getList();

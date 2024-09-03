@@ -8,7 +8,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="id"    column="id"    />
         <result property="nodeName"    column="node_name"    />
         <result property="address"    column="address"    />
-        <result property="businessAreaType"    column="business_area_type"    />
+        <result property="businessType"    column="business_type"    />
         <result property="regionId"    column="region_id"    />
         <result property="partnerId"    column="partner_id"    />
         <result property="createTime"    column="create_time"    />
@@ -22,7 +22,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="id"    column="id"    />
         <result property="nodeName"    column="node_name"    />
         <result property="address"    column="address"    />
-        <result property="businessAreaType"    column="business_area_type"    />
+        <result property="businessType"    column="business_type"    />
         <result property="regionId"    column="region_id"    />
         <result property="partnerId"    column="partner_id"    />
         <result property="createTime"    column="create_time"    />
@@ -36,7 +36,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectNodeVo">
-        select id, node_name, address, business_area_type, region_id, partner_id, create_time, update_time, create_by, update_by, remark from tb_node
+        select id, node_name, address, business_type, region_id, partner_id, create_time, update_time, create_by, update_by, remark from tb_node
     </sql>
 
     <select id="selectNodeList" parameterType="Node" resultMap="NodeResult">
@@ -72,7 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="nodeName != null and nodeName != ''">node_name,</if>
             <if test="address != null and address != ''">address,</if>
-            <if test="businessAreaType != null">business_area_type,</if>
+            <if test="businessType != null">business_type,</if>
             <if test="regionId != null">region_id,</if>
             <if test="partnerId != null">partner_id,</if>
             <if test="createTime != null">create_time,</if>
@@ -84,7 +84,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="nodeName != null and nodeName != ''">#{nodeName},</if>
             <if test="address != null and address != ''">#{address},</if>
-            <if test="businessAreaType != null">#{businessAreaType},</if>
+            <if test="businessType != null">#{businessType},</if>
             <if test="regionId != null">#{regionId},</if>
             <if test="partnerId != null">#{partnerId},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -100,7 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="SET" suffixOverrides=",">
             <if test="nodeName != null and nodeName != ''">node_name = #{nodeName},</if>
             <if test="address != null and address != ''">address = #{address},</if>
-            <if test="businessAreaType != null">business_area_type = #{businessAreaType},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
             <if test="regionId != null">region_id = #{regionId},</if>
             <if test="partnerId != null">partner_id = #{partnerId},</if>
             <if test="createTime != null">create_time = #{createTime},</if>

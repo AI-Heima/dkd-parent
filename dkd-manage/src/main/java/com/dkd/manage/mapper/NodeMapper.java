@@ -3,6 +3,7 @@ package com.dkd.manage.mapper;
 import java.util.List;
 import com.dkd.manage.domain.Node;
 import com.dkd.manage.domain.vo.NodeVo;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 点位管理Mapper接口

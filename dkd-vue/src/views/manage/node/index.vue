@@ -2,11 +2,13 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="点位名称" prop="nodeName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.nodeName"
           placeholder="请输入点位名称"
           clearable
           @keyup.enter="handleQuery"
+          :fetch-suggestions="querySearch"
+          value-key="nodeName"
         />
       </el-form-item>
       <el-form-item label="所属区域" prop="regionId">
@@ -78,23 +80,16 @@
       :index="item => (queryParams.pageNum - 1) * queryParams.pageSize + item + 1" />
       <el-table-column label="点位名称" align="center" prop="nodeName" />
       <el-table-column label="所属区域" align="center" prop="region.regionName" />
-        <!-- <template #default="scope">
-          {{ regionList.find(item => item.id === scope.row.regionId).regionName }}
-        </template>
-      </el-table-column> -->
-      <el-table-column label="商圈类型" align="center" prop="businessAreaType">
+      <el-table-column label="商圈类型" align="center" prop="businessType">
         <template #default="scope">
-          <dict-tag :options="business_type" :value="scope.row.businessAreaType"/>
+          <dict-tag :options="business_type" :value="scope.row.businessType"/>
         </template>
       </el-table-column>
       <el-table-column label="归属合作商" align="center" prop="partner.partnerName" />
-        <!-- <template #default="scope">
-          {{ partnerList.find(item => item.id === scope.row.partnerId).partnerName }}
-        </template>
-      </el-table-column> -->
       <el-table-column label="详细地址" align="left" prop="address" show-overflow-tooltip />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
+          <el-button link type="primary" @click="handleRead(scope.row)" v-hasPermi="['manage:vm:list']">查看详情</el-button>
           <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['manage:node:edit']">修改</el-button>
           <el-button link type="primary" @click="handleDelete(scope.row)" v-hasPermi="['manage:node:remove']">删除</el-button>
         </template>
@@ -107,13 +102,14 @@
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
+      :page-sizes="[10, 20, 50]"
     />
 
     <!-- 添加或修改点位管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="nodeRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="点位名称" prop="nodeName">
-          <el-input v-model="form.nodeName" placeholder="请输入点位名称" />
+          <el-input maxlength="15" v-model="form.nodeName" placeholder="请输入点位名称" />
         </el-form-item>
         <el-form-item label="所属区域" prop="regionId">
           <el-select style="width: 100%;" v-model="form.regionId" placeholder="请选择所属区域" clearable filterable>
@@ -125,8 +121,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="商圈类型" prop="businessAreaType">
-          <el-select style="width: 100%;" v-model="form.businessAreaType" placeholder="请选择商圈类型" clearable filterable>
+        <el-form-item label="商圈类型" prop="businessType">
+          <el-select style="width: 100%;" v-model="form.businessType" placeholder="请选择商圈类型" clearable filterable>
             <el-option
               v-for="dict in business_type"
               :key="dict.value"
@@ -146,7 +142,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="详细地址" prop="address">
-          <el-input v-model="form.address" type="textarea" placeholder="请输入详细地址" />
+          <el-input maxlength="20" v-model="form.address" type="textarea" placeholder="请输入详细地址" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -156,6 +152,24 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 查看详情对话框 -->
+    <el-dialog title="点位详情" v-model="readOpen" width="600px" append-to-body>
+      <el-table :data="vmList">
+        <el-table-column label="序号" type="index" width="50" align="center" />
+        <el-table-column label="设备编号" align="center" prop="innerCode" />
+        <el-table-column label="设备状态" align="center" prop="vmStatus">
+          <template #default="scope">
+            <dict-tag :options="vm_status" :value="scope.row.vmStatus"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="最后一次供货时间" align="center">
+          <template #default="scope">
+            {{ parseTime(scope.row.lastSupplyTime) }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -163,10 +177,12 @@
 import { listNode, getNode, delNode, addNode, updateNode } from "@/api/manage/node";
 import { listRegion } from "@/api/manage/region";
 import { listPartner } from "@/api/manage/partner";
+import { listVm } from "@/api/manage/vm";
 import { loadAllParams } from "@/api/page";
 
 const { proxy } = getCurrentInstance();
 const { business_type } = proxy.useDict('business_type');
+const { vm_status } = proxy.useDict('vm_status');
 
 const nodeList = ref([]);
 const open = ref(false);
@@ -194,7 +210,7 @@ const data = reactive({
     address: [
       { required: true, message: "详细地址不能为空", trigger: "blur" }
     ],
-    businessAreaType: [
+    businessType: [
       { required: true, message: "商圈类型不能为空", trigger: "change" }
     ],
     regionId: [
@@ -215,6 +231,10 @@ function getList() {
     nodeList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+    if (total.value === 0) {
+      // 提示无相关搜索结果
+      proxy.$modal.msg("无相关搜索结果");
+    }
   });
 }
 
@@ -232,7 +252,7 @@ function reset() {
     id: null,
     nodeName: null,
     address: null,
-    businessAreaType: null,
+    businessType: null,
     regionId: null,
     partnerId: null,
     createTime: null,
@@ -267,7 +287,18 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = "添加点位管理";
+  title.value = "添加点位";
+}
+
+/** 查看详情按钮操作 */
+const readOpen = ref(false);
+const vmList = ref([]);
+function handleRead(row) {
+  // 根据点位，查询设备列表
+  listVm({ ...loadAllParams, nodeId: row.id }).then(response => {
+    vmList.value = response.rows;
+    readOpen.value = true;
+  });
 }
 
 /** 修改按钮操作 */
@@ -277,7 +308,7 @@ function handleUpdate(row) {
   getNode(_id).then(response => {
     form.value = response.data;
     open.value = true;
-    title.value = "修改点位管理";
+    title.value = "修改点位";
   });
 }
 
@@ -305,9 +336,25 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.delete('你确定要删除本条内容吗？').then(function() {
-    return delNode(_ids);
-  }).then(() => {
+  proxy.$modal.delete('你确定要删除本条内容吗？').then(async () => {
+    let flag = false;
+    let res;
+    if(row.id) {
+      res = await listVm({ ...loadAllParams, nodeId: row.id })
+      if(res.total > 0) flag = true
+    }
+    else {
+      for (let i = 0; i < _ids.length; i++) {
+        res = await listVm({ ...loadAllParams, nodeId: _ids[i] })
+        if(res.total > 0) {
+          flag = true
+          break
+        }
+      }
+    } 
+    
+    if(flag) return proxy.$modal.msg("请先调整设备后再删除");
+    await delNode(_ids);
     getList();
     proxy.$modal.msgSuccess("删除成功");
   }).catch(() => {});
@@ -334,6 +381,14 @@ function getParntnerList() {
   listPartner(loadAllParams).then(response => {
     partnerList.value = response.rows;
   });
+}
+
+/** 输入框显示联想词 */
+function querySearch(queryString, cb) {
+  const results = queryString !== 'null'
+    ? nodeList.value.filter(item => item.nodeName.indexOf(queryString) === 0)
+    : nodeList.value
+  cb(results)
 }
 
 getList();

@@ -50,7 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="partnerName != null and partnerName != ''">partner_name,</if>
             <if test="contactPerson != null and contactPerson != ''">contact_person,</if>
-            <if test="contactPhone != null and phone != ''">contact_phone,</if>
+            <if test="contactPhone != null and contactPhone != ''">contact_phone,</if>
             <if test="profitShareRatio != null">profit_share_ratio,</if>
             <if test="username != null and username != ''">username,</if>
             <if test="password != null and password != ''">password,</if>
@@ -63,7 +63,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="partnerName != null and partnerName != ''">#{partnerName},</if>
             <if test="contactPerson != null and contactPerson != ''">#{contactPerson},</if>
-            <if test="contactPhone != null and phone != ''">#{contactPhone},</if>
+            <if test="contactPhone != null and contactPhone != ''">#{contactPhone},</if>
             <if test="profitShareRatio != null">#{profitShareRatio},</if>
             <if test="username != null and username != ''">#{username},</if>
             <if test="password != null and password != ''">#{password},</if>
@@ -80,7 +80,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="SET" suffixOverrides=",">
             <if test="partnerName != null and partnerName != ''">partner_name = #{partnerName},</if>
             <if test="contactPerson != null and contactPerson != ''">contact_person = #{contactPerson},</if>
-            <if test="contactPhone != null and phone != ''">phone = #{contactPhone},</if>
+            <if test="contactPhone != null and contactPhone != ''">contact_phone = #{contactPhone},</if>
             <if test="profitShareRatio != null">profit_share_ratio = #{profitShareRatio},</if>
             <if test="username != null and username != ''">username = #{username},</if>
             <if test="password != null and password != ''">password = #{password},</if>

@@ -58,12 +58,12 @@ public class DkdContants {
     /**
      * 员工启用
      */
-    public static final Boolean EMP_STATUS_NORMAL = true;
+    public static final Long EMP_STATUS_NORMAL = 1L;
 
     /**
      * 员工禁用
      */
-    public static final Boolean EMP_STATUS_DISABLE = false;
+    public static final Long EMP_STATUS_DISABLE = 0L;
 
     /**
      * 角色编码：运营员
@@ -75,4 +75,28 @@ public class DkdContants {
      */
     public static final String ROLE_CODE_OPERATOR = "1003";
 
+    /**
+     * 订单状态：待支付
+     */
+    public static final Long ORDER_STATUS_WAITPAY = 0L;
+
+    /**
+     * 订单状态：已支付
+     */
+    public static final Long ORDER_STATUS_PAID = 1L;
+
+    /**
+     * 订单状态：出货成功
+     */
+    public static final Long ORDER_STATUS_SUCCESS = 2L;
+
+    /**
+     * 订单状态：出货失败
+     */
+    public static final Long ORDER_STATUS_FAIL = 3L;
+
+    /**
+     * 订单状态：已取消
+     */
+    public static final Long ORDER_STATUS_CANCEL = 4L;
 }

@@ -2,11 +2,13 @@
   <div class="app-container">
     <el-form @submit.native.prevent :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="人员名称" prop="userName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.userName"
           placeholder="请输入人员名称"
           clearable
           @keyup.enter="handleQuery"
+          :fetch-suggestions="querySearch"
+          value-key="userName"
         />
       </el-form-item>
       <el-form-item>
@@ -82,10 +84,10 @@
     />
 
     <!-- 添加或修改人员列表对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="cancel">
       <el-form ref="empRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="人员名称" prop="userName">
-          <el-input v-model="form.userName" placeholder="请输入人员名称" />
+          <el-input maxlength="5" v-model="form.userName" placeholder="请输入人员名称" />
         </el-form-item>
         <el-form-item label="角色" prop="roleId">
           <el-select style="width: 100%;" v-model="form.roleId" placeholder="请选择角色" clearable filterable>
@@ -114,7 +116,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="员工头像" prop="image">
-          <image-upload v-model="form.image" limit="1" />
+          <image-upload v-model="form.image" :limit="1" :fileType="['jpg', 'png']" :fileSize="0.1" />
         </el-form-item>
         <el-form-item label="是否启用" prop="status">
           <el-radio-group v-model="form.status">
@@ -198,6 +200,10 @@ function getList() {
     empList.value = response.rows;
     total.value = response.total;
     loading.value = false;
+    if (total.value === 0) {
+      // 提示无相关搜索结果
+      proxy.$modal.msg("无相关搜索结果");
+    }
   });
 }
 
@@ -251,7 +257,7 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   open.value = true;
-  title.value = "添加人员列表";
+  title.value = "添加人员";
 }
 
 /** 修改按钮操作 */
@@ -261,7 +267,7 @@ function handleUpdate(row) {
   getEmp(_id).then(response => {
     form.value = response.data;
     open.value = true;
-    title.value = "修改人员列表";
+    title.value = "修改人员";
   });
 }
 
@@ -282,11 +288,11 @@ function submitForm() {
           getList();
         });
       }
+      setTimeout(() => {
+        reset();
+      }, 500);
     }
   });
-  setTimeout(() => {
-    reset();
-  }, 500);
 }
 
 /** 删除按钮操作 */
@@ -321,6 +327,14 @@ function getRegionList() {
   listRegion(loadAllParams).then(response => {
     regionList.value = response.rows;
   });
+}
+
+/** 输入框显示联想词 */
+function querySearch(queryString, cb) {
+  const results = queryString !== 'null'
+    ? empList.value.filter(item => item.userName.indexOf(queryString) === 0)
+    : empList.value
+  cb(results)
 }
 
 getList();
