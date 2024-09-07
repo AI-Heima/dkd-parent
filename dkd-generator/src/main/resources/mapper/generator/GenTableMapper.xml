@@ -77,6 +77,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 
 	<select id="selectDbTableList" parameterType="GenTable" resultMap="GenTableResult">
+		-- 从information_schema.tables表中选择表名、表注释、创建时间和更新时间
+		-- 过滤条件：表所属的数据库 schema 等于当前数据库
+		-- 排除表名以 'qrtz_' 或 'gen_' 开头的表
+		-- 同时排除在 gen_table 表中的表名
 		select table_name, table_comment, create_time, update_time from information_schema.tables
 		where table_schema = (select database())
 		AND table_name NOT LIKE 'qrtz_%' AND table_name NOT LIKE 'gen_%'

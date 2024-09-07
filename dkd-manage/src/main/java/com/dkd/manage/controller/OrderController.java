@@ -2,6 +2,9 @@ package com.dkd.manage.controller;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,10 +26,11 @@ import com.dkd.common.core.page.TableDataInfo;
 
 /**
  * 订单管理Controller
- * 
+ *
  * @author itheima
- * @date 2024-09-02
+ * @date 2024-09-04
  */
+@Api(tags = "订单管理Controller")
 @RestController
 @RequestMapping("/manage/order")
 public class OrderController extends BaseController
@@ -37,6 +41,7 @@ public class OrderController extends BaseController
     /**
      * 查询订单管理列表
      */
+    @ApiOperation("查询订单管理列表")
     @PreAuthorize("@ss.hasPermi('manage:order:list')")
     @GetMapping("/list")
     public TableDataInfo list(Order order)
@@ -49,6 +54,7 @@ public class OrderController extends BaseController
     /**
      * 导出订单管理列表
      */
+    @ApiOperation("导出订单管理列表")
     @PreAuthorize("@ss.hasPermi('manage:order:export')")
     @Log(title = "订单管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
@@ -62,6 +68,7 @@ public class OrderController extends BaseController
     /**
      * 获取订单管理详细信息
      */
+    @ApiOperation("获取订单管理详细信息")
     @PreAuthorize("@ss.hasPermi('manage:order:query')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
@@ -72,6 +79,7 @@ public class OrderController extends BaseController
     /**
      * 新增订单管理
      */
+    @ApiOperation("新增订单管理")
     @PreAuthorize("@ss.hasPermi('manage:order:add')")
     @Log(title = "订单管理", businessType = BusinessType.INSERT)
     @PostMapping
@@ -83,6 +91,7 @@ public class OrderController extends BaseController
     /**
      * 修改订单管理
      */
+    @ApiOperation("修改订单管理")
     @PreAuthorize("@ss.hasPermi('manage:order:edit')")
     @Log(title = "订单管理", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -94,9 +103,10 @@ public class OrderController extends BaseController
     /**
      * 删除订单管理
      */
+    @ApiOperation("删除订单管理")
     @PreAuthorize("@ss.hasPermi('manage:order:remove')")
     @Log(title = "订单管理", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(orderService.deleteOrderByIds(ids));
@@ -105,6 +115,7 @@ public class OrderController extends BaseController
     /**
      * 根据设备编码查询商品销售详情和补货次数以及维修次数
      */
+    @ApiOperation("据设备编码查询商品销售详情和补货次数以及维修次数")
     @PreAuthorize("@ss.hasPermi('manage:order:list')")
     @GetMapping("/salesList/{innerCode}")
     public AjaxResult salesList(@PathVariable String innerCode)

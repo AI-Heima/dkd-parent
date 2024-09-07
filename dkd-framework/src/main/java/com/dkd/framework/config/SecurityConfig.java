@@ -25,6 +25,7 @@ import com.dkd.framework.security.handle.LogoutSuccessHandlerImpl;
  * 
  * @author ruoyi
  */
+// 开启方法级别的权限控制 ==> @PreAuthorize
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter
 {
